@@ -1,0 +1,52 @@
+% --- setup_hvac_project.m ---
+% Script per inizializzare i parametri della simulazione HVAC distribuita
+
+clear; clc;
+
+%% 1. Parametri di Simulazione
+T_sim = 3600; % Durata simulazione (secondi) [1 ora]
+T_ext = 5;    % Temperatura esterna (°C)
+
+%% 2. Parametri delle Zone (Modello Fisico)
+N_ZONES = 3; % Numero di zone (stanze) da simulare
+
+% Parametri termici (uguali per tutte le zone per semplicità)
+% Modello del primo ordine: C * dT/dt = P_hvac - (T_room - T_ext)/R + P_disturb
+C = 8000;  % Capacità termica (J/K)
+R = 0.5;   % Resistenza termica verso l'esterno (K/W)
+P_max = 2000; % Potenza massima HVAC (Watt)
+
+% Setpoint individuali desiderati per ogni zona
+T_setpoint_desiderati = [24; 24; 24]; % (°C)
+
+%% 3. Parametri del Controllore Locale (PI)
+% Ogni zona ha un controllore PI per inseguire il setpoint
+Kp = 60; % Guadagno proporzionale (aggressivo)
+Ki = 0.4; % Guadagno integrale (reattivo)
+Kd = 5000; % Guadagno derivativo (il "freno" anti-overshoot)
+
+% ... (i tuoi Kp, Ki, Kd, P_max restano invariati) ...
+
+% Parametri per il Gain Scheduling (DEVONO CORRISPONDERE)
+P_max_high = P_max;      % Usa 2000
+P_max_low  = 1000;      % Il tuo P_max_soft
+Err_thr    = 3.0;       % La tua Error_Threshold
+%...
+%% 4. Parametri del Sistema Distribuito (Consenso)
+% Definiamo la topologia di comunicazione: chi parla con chi?
+% Esempio: 1 <-> 2 <-> 3 (una linea)
+
+% Matrice di Adiacenza (A)
+A = [0 1 0;
+     1 0 1;
+     0 1 0];
+     
+% Matrice Laplaciana (L = D - A, dove D è la matrice dei gradi)
+% La useremo per l'algoritmo di consenso
+D = diag(sum(A, 2));
+L = D - A;
+
+% Tasso di apprendimento per l'algoritmo di consenso
+epsilon = 0.01; 
+
+disp('Parametri del progetto HVAC caricati nel Workspace.');
